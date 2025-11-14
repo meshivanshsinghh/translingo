@@ -18,7 +18,7 @@ training:
   gradient_clip_val: 1.0
   label_smoothing: 0.1
   checkpoint_interval: 5
-  early_stopping_patience: 5
+  early_stopping_patience: 100
 
 # Data Configuration
 data:
