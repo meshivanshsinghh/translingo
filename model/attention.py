@@ -95,16 +95,19 @@ class MultiHeadAttention(nn.Module):
                 mask: Optional[torch.Tensor] = None) -> Tuple[torch.Tensor, torch.Tensor]:
         """
         Args:
-            query: Query tensor [batch_size, seq_len, d_model]
-            key: Key tensor [batch_size, seq_len, d_model]
-            value: Value tensor [batch_size, seq_len, d_model]
+            query: Query tensor [batch_size, seq_len_q, d_model]
+            key: Key tensor [batch_size, seq_len_k, d_model]
+            value: Value tensor [batch_size, seq_len_v, d_model]
             mask: Mask tensor
         
         Returns:
-            output: Multi-head attention output [batch_size, seq_len, d_model]
-            attention: Attention weights [batch_size, n_heads, seq_len, seq_len]
+            output: Multi-head attention output [batch_size, seq_len_q, d_model]
+            attention: Attention weights [batch_size, n_heads, seq_len_q, seq_len_k]
         """
-        batch_size, seq_len, _ = query.size()
+        batch_size = query.size(0)
+        seq_len_q = query.size(1)  # Query sequence length
+        seq_len_k = key.size(1)     # Key sequence length (can be different!)
+        seq_len_v = value.size(1)   # Value sequence length (same as key)
         
         # Pre-norm variant (if enabled)
         if self.pre_norm:
@@ -115,17 +118,17 @@ class MultiHeadAttention(nn.Module):
         # Store residual
         residual = query
         
-        # Linear projections in batch from d_model => n_heads x d_k
-        Q = self.W_q(query).view(batch_size, seq_len, self.n_heads, self.d_k).transpose(1, 2)
-        K = self.W_k(key).view(batch_size, seq_len, self.n_heads, self.d_k).transpose(1, 2)
-        V = self.W_v(value).view(batch_size, seq_len, self.n_heads, self.d_k).transpose(1, 2)
+        # Linear projections - FIXED: Use correct sequence lengths
+        Q = self.W_q(query).view(batch_size, seq_len_q, self.n_heads, self.d_k).transpose(1, 2)
+        K = self.W_k(key).view(batch_size, seq_len_k, self.n_heads, self.d_k).transpose(1, 2)
+        V = self.W_v(value).view(batch_size, seq_len_v, self.n_heads, self.d_k).transpose(1, 2)
         
         # Apply attention
         attn_output, attention_weights = self.attention(Q, K, V, mask)
         
-        # Concatenate heads
+        # Concatenate heads - use seq_len_q for output
         attn_output = attn_output.transpose(1, 2).contiguous().view(
-            batch_size, seq_len, self.d_model
+            batch_size, seq_len_q, self.d_model
         )
         
         # Final linear projection
@@ -138,7 +141,6 @@ class MultiHeadAttention(nn.Module):
             output = self.layer_norm(output)
         
         return output, attention_weights
-
 
 def create_padding_mask(seq: torch.Tensor, pad_idx: int = 0) -> torch.Tensor:
     """
