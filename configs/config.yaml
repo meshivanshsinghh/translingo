@@ -1,24 +1,24 @@
 # Model Configuration
 model:
-  d_model: 256
-  n_heads: 4
-  n_layers: 3
-  d_ff: 1024
-  max_seq_length: 100
-  dropout: 0.1
-  vocab_size: 10000
+  d_model: 512 # Increased from 256 (standard from paper)
+  n_heads: 8 # Increased from 4 (standard from paper)
+  n_layers: 6 # Increased from 3 (standard from paper)
+  d_ff: 2048 # Increased from 1024 (standard from paper)
+  max_seq_length: 100 # Keep same
+  dropout: 0.1 # Keep same
+  vocab_size: 37000 # Increased from 10000 (better coverage)
 
 # Training Configuration
 training:
-  batch_size: 32
-  num_epochs: 30
-  learning_rate: 0.0001
-  warmup_steps: 4000
-  gradient_accumulation_steps: 4
-  gradient_clip_val: 1.0
-  label_smoothing: 0.1
-  checkpoint_interval: 5
-  early_stopping_patience: 100
+  batch_size: 32 # Keep same (works well with T4 GPU)
+  num_epochs: 50 # Increased from 30 (more training)
+  learning_rate: 0.0001 # Keep same
+  warmup_steps: 4000 # Keep same
+  gradient_accumulation_steps: 4 # Keep same
+  gradient_clip_val: 1.0 # Keep same
+  label_smoothing: 0.1 # Keep same
+  checkpoint_interval: 5 # Keep same
+  early_stopping_patience: 10 # Changed from 100 (stop if stuck)
 
 # Data Configuration
 data:
