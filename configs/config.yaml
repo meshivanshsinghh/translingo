@@ -1,0 +1,51 @@
+# Model Configuration
+model:
+  d_model: 256
+  n_heads: 4
+  n_layers: 3
+  d_ff: 1024
+  max_seq_length: 100
+  dropout: 0.1
+  vocab_size: 10000
+
+# Training Configuration
+training:
+  batch_size: 32
+  num_epochs: 30
+  learning_rate: 0.0001
+  warmup_steps: 4000
+  gradient_accumulation_steps: 4
+  gradient_clip_val: 1.0
+  label_smoothing: 0.1
+  checkpoint_interval: 5
+  early_stopping_patience: 5
+
+# Data Configuration
+data:
+  dataset: "multi30k"
+  source_lang: "de"
+  target_lang: "en"
+  train_size: 29000
+  valid_size: 1000
+  test_size: 1000
+  max_length: 100
+
+# Paths
+paths:
+  data_dir: "data"
+  checkpoint_dir: "checkpoints"
+  log_dir: "logs"
+  cache_dir: "cache"
+
+# Inference Configuration
+inference:
+  beam_size: 4
+  length_penalty: 0.6
+  temperature: 1.0
+
+# API Configuration
+api:
+  host: "0.0.0.0"
+  port: 8000
+  max_request_size: 1048576
+  rate_limit: 100
