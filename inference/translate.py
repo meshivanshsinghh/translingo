@@ -37,16 +37,16 @@ class Translator:
         self.eos_id = self.sp.eos_id()
         self.pad_id = self.sp.pad_id()
         
-        # Decoder
+        # Decoder - with no_repeat_ngram_size=3 to prevent repetition
         self.use_beam_search = use_beam_search
         if use_beam_search:
-            self.decoder = BeamSearch(beam_size=beam_size)
+            self.decoder = BeamSearch(beam_size=beam_size, no_repeat_ngram_size=3)
         
         logger.info(f"Translator initialized on {self.device}")
         logger.info(f"Vocab size: {self.sp.vocab_size()}")
         logger.info(f"Using {'beam search' if use_beam_search else 'greedy'} decoding")
     
-    def translate(self, text: str, max_length: int = 100) -> str:
+    def translate(self, text: str, max_length: int = 50) -> str:  # Changed default from 100 to 50
         """
         Translate a single text
         
@@ -93,7 +93,7 @@ class Translator:
         
         return translated_text
     
-    def translate_batch(self, texts: List[str], max_length: int = 100) -> List[str]:
+    def translate_batch(self, texts: List[str], max_length: int = 50) -> List[str]:  # Changed from 100 to 50
         """
         Translate multiple texts in batch
         
@@ -149,7 +149,7 @@ class Translator:
         
         return results
     
-    def translate_with_attention(self, text: str, max_length: int = 100) -> Tuple[str, torch.Tensor]:
+    def translate_with_attention(self, text: str, max_length: int = 50) -> Tuple[str, torch.Tensor]:
         """
         Translate and return attention weights
         

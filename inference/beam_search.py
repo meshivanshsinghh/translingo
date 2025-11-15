@@ -15,11 +15,11 @@ class BeamSearch:
     """Beam search decoder for transformer models"""
     
     def __init__(self, beam_size: int = 4, length_penalty: float = 0.6,
-                 coverage_penalty: float = 0.0, no_repeat_ngram_size: int = 0):
+                 coverage_penalty: float = 0.0, no_repeat_ngram_size: int = 3):
         self.beam_size = beam_size
         self.length_penalty = length_penalty
         self.coverage_penalty = coverage_penalty
-        self.no_repeat_ngram_size = no_repeat_ngram_size
+        self.no_repeat_ngram_size = no_repeat_ngram_size  # Changed default from 0 to 3
     
     def search(self, model, src: torch.Tensor, max_length: int = 100,
                bos_id: int = 2, eos_id: int = 3, pad_id: int = 0) -> List[List[int]]:
@@ -51,7 +51,11 @@ class BeamSearch:
             all_candidates = []
             
             for batch_idx in range(batch_size):
-                # Skip if all beams are finished
+                # NEW: Stop if the BEST beam (first one after sorting) is finished
+                if beams[batch_idx] and beams[batch_idx][0].finished:
+                    continue
+                
+                # Also skip if all beams are finished
                 if all(hyp.finished for hyp in beams[batch_idx]):
                     continue
                 
@@ -98,19 +102,21 @@ class BeamSearch:
                     for token_rank, (token_log_prob, token_id) in enumerate(
                         zip(beam_log_probs, beam_indices_local)):
                         
+                        new_tokens = hypothesis.tokens + [token_id.item()]
+                        
                         # Apply no-repeat penalty
-                        if self._has_repeated_ngram(hypothesis.tokens + [token_id.item()]):
+                        if self._has_repeated_ngram(new_tokens):
                             continue
                         
                         new_log_prob = hypothesis.log_prob + token_log_prob.item()
                         
                         # Apply length penalty
-                        score = self._apply_length_penalty(new_log_prob, len(hypothesis.tokens) + 1)
+                        score = self._apply_length_penalty(new_log_prob, len(new_tokens))
                         
                         candidates.append((
                             score,
                             BeamHypothesis(
-                                tokens=hypothesis.tokens + [token_id.item()],
+                                tokens=new_tokens,
                                 log_prob=new_log_prob,
                                 finished=(token_id.item() == eos_id)
                             )
@@ -122,6 +128,10 @@ class BeamSearch:
                 new_beams = []
                 for score, hypothesis in candidates[:self.beam_size]:
                     new_beams.append(hypothesis)
+                
+                # If we have no candidates, keep the old beams
+                if not new_beams:
+                    new_beams = beams[batch_idx]
                 
                 beams[batch_idx] = new_beams
         
